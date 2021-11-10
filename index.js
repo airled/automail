@@ -15,6 +15,7 @@ const START_URL =
     const activator = new SmsActivator();
 
     gen.generate();
+    console.log(gen);
 
     try {
         await driver.get(START_URL);
@@ -35,15 +36,37 @@ const START_URL =
         await driver.sleep(30000);
 
         // fetch code
-        const code = await activator.getCode()
+        const code = await activator.getCode();
         await driver.wait(until.elementLocated(By.id("code")), 20000);
         await driver.sleep(3000);
         await driver.findElement(By.id("code")).sendKeys(code, Key.ENTER);
 
-        // await driver.sleep(3000);
-        // await driver.findElement(By.id("day")).sendKeys('13');
+        // fill last step (birthday)
+        await driver.sleep(3000);
+        driver.executeScript(
+            `document.getElementById('month').value = '${gen.monthOfBirth}'`
+        );
+        driver.executeScript(`document.getElementById('gender').value = '1'`);
+        await driver.findElement(By.id("day")).sendKeys(gen.dayOfBirth);
+        await driver
+            .findElement(By.id("year"))
+            .sendKeys(gen.yearOfBirth, Key.ENTER);
+        await driver.sleep(3000);
+        await driver.wait(
+            until.elementLocated(By.xpath("//span[text() = 'Пропустить']")),
+            20000
+        );
+        await driver.sleep(3000);
+        driver.findElement(By.xpath("//span[text() = 'Пропустить']")).click();
+        await driver.sleep(3000);
+        await driver.wait(
+            until.elementLocated(By.xpath("//span[text() = 'Принимаю']")),
+            20000
+        );
+        await driver.sleep(3000);
+        driver.findElement(By.xpath("//span[text() = 'Принимаю']")).click();
     } finally {
-        //await driver.quit();
+        await driver.quit();
     }
 })();
 

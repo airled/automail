@@ -1,5 +1,5 @@
 import axios from "axios";
-import config from "../config.json";
+import config from "./configParser.js";
 
 const API_KEY = config.smsActivatorApiKey;
 const FETCH_NUMBER_URL = `https://sms-activate.ru/stubs/handler_api.php?api_key=${API_KEY}&action=getNumber&service=go&operator=any&country=0`;
