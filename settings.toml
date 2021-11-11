@@ -1,0 +1,4 @@
+password_length = 10
+step_wait_sec = 5
+get_code_retries_max = 20
+get_code_retries_wait_sec = 15
