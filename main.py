@@ -4,6 +4,8 @@ from random import randint
 from seleniumwire import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from password_generator import PasswordGenerator
 from sms_activator import SmsActivator
 from csv_proxy_fetcher import fetch_proxy
@@ -38,7 +40,6 @@ def __start(driver, password_generator):
 
   activator = SmsActivator()
   number = activator.get_number()
-  activator.activate()
   __fill_phone_number_and_proceed(driver, number)
   time.sleep(settings.step_wait_sec)
 
@@ -54,6 +55,8 @@ def __start(driver, password_generator):
 
   driver.find_element_by_xpath("//span[text() = 'Принимаю']").click();
   time.sleep(settings.step_wait_sec)
+  time.sleep(100000)
+  # WebDriverWait(driver, 10).until(EC.title_is(""))
 
 def __fill_basic_info_and_proceed(driver, first_name, last_name, user_name, password):
   driver.find_element(By.NAME, 'firstName').send_keys(first_name)

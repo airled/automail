@@ -23,17 +23,8 @@ class SmsActivator:
     _, id, number = resp.text.split(':')
     self.number = number
     self.id = id
+    self.__activate()
     return number
-
-  def activate(self):
-    params = {
-      'api_key': settings.api_key,
-      'action': 'setStatus',
-      'status': '1',
-      'id': self.id
-    }
-    resp = requests.get(BASE_URL, params=params)
-    print(resp.text)
 
   def get_code(self):
     params = {
@@ -51,8 +42,18 @@ class SmsActivator:
       else:
         _, code = resp.text.split(':')
         self.code = code
-        __complete_activation()
+        self.__complete_activation()
         return code
+
+  def __activate(self):
+    params = {
+      'api_key': settings.api_key,
+      'action': 'setStatus',
+      'status': '1',
+      'id': self.id
+    }
+    resp = requests.get(BASE_URL, params=params)
+    print(resp.text)
 
   def __complete_activation(self):
     params = {
