@@ -5,7 +5,8 @@ from config import settings
 BASE_URL = 'https://sms-activate.ru/stubs/handler_api.php'
 
 class SmsActivator:
-  def __init__(self):
+  def __init__(self, country):
+    self.country = country
     self.number = ""
     self.id = ""
     self.code = ""
@@ -16,7 +17,7 @@ class SmsActivator:
       'action': 'getNumber',
       'service': 'go',
       'operator': 'any',
-      'country': '0'
+      'country': self.country['activator_index']
     }
     resp = requests.get(BASE_URL, params=params)
     print(resp.text)

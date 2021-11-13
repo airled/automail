@@ -1,6 +1,8 @@
 import time
 from config import settings
 from random import randint
+from random import sample
+from faker import Faker
 from seleniumwire import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -9,6 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from password_generator import PasswordGenerator
 from sms_activator import SmsActivator
 from csv_proxy_fetcher import fetch_proxy
+from countries import pick_country
 
 START_URL = "https://accounts.google.com/signup/v2/webcreateaccount?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=SignUp"
 
@@ -31,16 +34,20 @@ def main():
 
 
 def __start(driver, password_generator):
-  first_name, last_name = ['Test', 'User']
+  fake = Faker()
+  first_name = fake.first_name()
+  last_name = fake.last_name()
+  name = "".join(sample([first_name, last_name], 2))
   random_number = randint(100, 10000)
-  user_name = f'{first_name}{last_name}{random_number}'.lower()
+  user_name = f'{name}{random_number}'.lower()
   password = password_generator.generate()
   __fill_basic_info_and_proceed(driver, first_name, last_name, user_name, password)
   time.sleep(settings.step_wait_sec)
 
-  activator = SmsActivator()
+  country = pick_country()
+  activator = SmsActivator(country)
   number = activator.get_number()
-  __fill_phone_number_and_proceed(driver, number)
+  __fill_phone_number_and_proceed(driver, country, number)
   time.sleep(settings.step_wait_sec)
 
   code = activator.get_code()
@@ -55,8 +62,8 @@ def __start(driver, password_generator):
 
   driver.find_element_by_xpath("//span[text() = 'Принимаю']").click();
   time.sleep(settings.step_wait_sec)
-  time.sleep(100000)
-  # WebDriverWait(driver, 10).until(EC.title_is(""))
+  WebDriverWait(driver, 100).until(EC.title_contains(f'{user_name}@gmail.com'))
+  print(f"DONE: {user_name}@gmail.com {password}")
 
 def __fill_basic_info_and_proceed(driver, first_name, last_name, user_name, password):
   driver.find_element(By.NAME, 'firstName').send_keys(first_name)
@@ -65,7 +72,11 @@ def __fill_basic_info_and_proceed(driver, first_name, last_name, user_name, pass
   driver.find_element(By.NAME, "Passwd").send_keys(password)
   driver.find_element(By.NAME, "ConfirmPasswd").send_keys(password, Keys.ENTER)
 
-def __fill_phone_number_and_proceed(driver, number):
+def __fill_phone_number_and_proceed(driver, country, number):
+  gmail_prefix = country['gmail_prefix']
+  driver.find_element(By.ID, "countryList").click()
+  driver.find_element_by_xpath(f"//span[text() = '{gmail_prefix}']").click()
+  driver.find_element(By.ID, "phoneNumberId").clear()
   driver.find_element(By.ID, "phoneNumberId").send_keys(number, Keys.ENTER)
 
 def __fill_code_and_proceed(driver, code):
