@@ -3,3 +3,4 @@ geckodriver
 geckodriver.log
 .secrets.toml
 proxy.csv
+result.txt

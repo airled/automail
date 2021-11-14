@@ -1,7 +1,15 @@
 import csv
+import random
 
 def fetch_proxy():
   with open('proxy.csv', newline='') as csvfile:
     reader = csv.reader(csvfile, delimiter=',')
-    for row in reader:
-        return row
+    # TODO: temporary logic. will be replaced in future
+    (ip, port, login, password, _) = random.choice(list(reader))
+    return {
+      'proxy': {
+        'http': f'socks5://{login}:{password}@{ip}:{port}',
+        'https': f'socks5://{login}:{password}@{ip}:{port}',
+        'no_proxy': f'socks5://{login}:{password}@{ip}:{port}'
+      }
+    }
