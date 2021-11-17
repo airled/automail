@@ -6,3 +6,4 @@ geckodriver.log
 proxy.csv
 result.txt
 *.xpi
+*.crx

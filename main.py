@@ -4,15 +4,14 @@ from config import settings
 from random import randint, sample, choice
 from faker import Faker
 from password_generator import PasswordGenerator
-from seleniumwire import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from seleniumwire.undetected_chromedriver import Chrome, ChromeOptions
 # custom libs
-from sms_activator import SmsActivator
-from user_agent import get_user_agent
 from csv_proxy_fetcher import fetch_proxy
+from sms_activator import SmsActivator
 from countries import pick_country
 
 START_URL = "https://accounts.google.com/signup/v2/webcreateaccount?service=mail&continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&flowName=GlifWebSignIn&flowEntry=SignUp"
@@ -20,43 +19,50 @@ START_URL = "https://accounts.google.com/signup/v2/webcreateaccount?service=mail
 def main():
   number_of_emails = int(sys.argv[1])
   for i in range(0, number_of_emails):
-    __run()
+    __run_browser()
 
 
-def __run():
-  password_generator = PasswordGenerator()
-  password_generator.minlen = settings.password_length
-  profile = webdriver.FirefoxProfile()
-  # hide webrtc
-  profile.set_preference("media.peerconnection.enabled", False)
-  profile.set_preference("general.useragent.override", get_user_agent())
-  driver = webdriver.Firefox(profile, seleniumwire_options=fetch_proxy())
+def __run_browser():
+  options = ChromeOptions()
+  options.add_argument('--no-first-run')
+  options.add_extension('/home/air/projects/automail/webrtc-control.crx')
+  options.add_extension('/home/air/projects/automail/random-useragent.crx')
+  driver = Chrome(seleniumwire_options=fetch_proxy(), options=options)
+  driver.request_interceptor = __intercept_request
   driver.get(START_URL)
-  (email, password) = __start(driver, password_generator)
+  (email, password) = __start_steps(driver)
   f = open("result.txt", "a")
   f.write(f'{email} {password}\n')
   f.close()
   driver.close()
 
-def __start(driver, password_generator):
+def __intercept_request(request):
+  del request.headers['Proxy-Connection']
+
+def __start_steps(driver):
   fake = Faker()
   first_name = fake.first_name()
   last_name = fake.last_name()
-  name = "".join(sample([first_name, last_name], 2))
-  random_number = randint(1000, 10000)
-  user_name = f'{name}{random_number}'.lower()
+  user_name = "".join(sample([
+    first_name,
+    last_name,
+    str(randint(1000, 10000))
+  ], 3)).lower()
+  print(f'Username: {user_name}')
+  password_generator = PasswordGenerator()
+  password_generator.minlen = settings.password_length
   password = password_generator.generate()
+  print(f'Password: {password}')
   __fill_basic_info_and_proceed(driver, first_name, last_name, user_name, password)
   __wait_for_step()
 
   country = pick_country()
   activator = SmsActivator(country)
-  number = activator.get_number()
-  __fill_phone_number_and_proceed(driver, country, number)
+
+  __fill_phone_number_and_proceed(driver, country, activator.get_number())
   __wait_for_step()
 
-  code = activator.get_code()
-  __fill_code_and_proceed(driver, code)
+  __fill_code_and_proceed(driver, activator.get_code())
   __wait_for_step()
 
   __fill_birthday_and_proceed(driver)
